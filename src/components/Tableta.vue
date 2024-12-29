@@ -1,162 +1,322 @@
 <template>
-  <div class="contenedor-gde">
-          <h1>{{ msg }}</h1>
-          <!-- botones -->
-          <div id="botones">
-            <button @click="comerFila()" class="btn">COMER FILA</button>
-            <button @click="comerColumna()" class="btn">COMER COLUMNA</button>
-            <button @click="pararComer()" class="btn">¡NO QUIERO COMER MÁS!</button>
-          </div>
-          <!-- muestra la tableta  -->
-      <div class="tableta">
-          <div v-for="(i, indice) in tableta" :key="indice" class="fila">
-              <div v-for="(j, index) in i" :key="j.iden" class="celda" @click="onClick(indice, index)" @mouseover="mouseOver(indice,index)" :id="j.color">
-                  <p class="secret" v-if="pulsada && tableta[indice][index].secret === true ">¡MMM...!</p>
-              </div>
-          </div>
+    <div class="contenedor-gde">
+      <img alt="Onzas de chocolate" src="../assets/onzas.jpeg" class="imagen-chocolate">
+      <h1>{{ msg }}</h1>
+      <!-- Botones -->
+      <div id="botones">
+        <button @click="comerFila()" class="btn">COMER FILA</button>
+        <button @click="comerColumna()" class="btn">COMER COLUMNA</button>
+        <button @click="abrirGuardar()" class="btn">¡NO QUIERO COMER MÁS!</button>
       </div>
-    
-  </div>
-</template>
-
-<script>
-export default {
-  name: 'Tableta',
-  props: {
-    msg: String
-  },
-  data:function(){
-      return{
-        tableta:[],
-        colorToque: "",
-        onzaSeleccionada: undefined,
-        pulsada: true,
-        comer: true,
-      }     
-  }, // creación de la tableta de chocolate
-  created: function() {
-        const auxArr = [] // array auxiliar
-        for(let i=0; i<7;i++){
-             auxArr.push([])
-            for(let j=0; j<5; j++){
-                auxArr[i].push({ 
-                    iden: i+j, 
-                    color: 'darkMarron',
-                    tocada: false,
-                    secret: false,
-                    anular: false,
-                })
-            }
+      <!-- Muestra la tableta -->
+      <div class="tableta">
+        <div v-for="(fila, indice) in tableta" :key="indice" class="fila">
+          <div
+            v-for="(celda, index) in fila"
+            :key="celda.iden"
+            class="celda"
+            @click="onClick(indice, index)"
+            :style="{ backgroundColor: celda.color }"
+          >
+            <p class="emoji" v-if="celda.secret">😋</p>
+          </div>
+        </div>
+      </div>
+      <!-- Botón para recuperar tableta guardada -->
+      <button v-if="tabletaGuardada" @click="recuperarTableta()" class="btn-guardada">Tableta Guardada</button>
+  
+      <!-- Cuadro de diálogo -->
+      <div v-if="mostrarDialogo" class="dialogo">
+        <div class="dialogo-contenido">
+          <p>{{ mensajeDialogo }}</p>
+          <button
+            v-if="mostrarSoloOk"
+            @click="confirmarDialogo(true)"
+          >
+            OK
+          </button>
+          <template v-else>
+            <button @click="confirmarDialogo(true)">Guardar</button>
+            <button @click="confirmarDialogo(false)">No</button>
+          </template>
+        </div>
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  export default {
+    name: "Tableta",
+    props: {
+      msg: String,
+    },
+    data() {
+      return {
+        tableta: [],
+        tabletaGuardada: false,
+        mostrarDialogo: false,
+        mensajeDialogo: "",
+        callbackDialogo: null,
+        mostrarSoloOk: false,
+      };
+    },
+    created() {
+      this.iniciarJuego();
+    },
+    methods: {
+      iniciarJuego() {
+        if (localStorage.getItem("tabletaGuardada")) {
+          this.tabletaGuardada = true;
         }
-        this.tableta = auxArr; // la tableta adopta el valor del array auxiliar 
-  },
-  methods: {
-      // cambio de color al tocar la celda
-        mouseOver(indice, index){
-            // cambia a marron clarito tocada está en false
-            if(this.tableta[indice][index].tocada === false && this.tableta[indice][index].anular === false){ 
-                this.$set(this.tableta[indice][index], 'color', 'marron');
-                this.$set(this.tableta[indice][index], 'tocada', true);
-            }else if (this.tableta[indice][index].tocada === true && this.tableta[indice][index].anular === false){ // vuelve al color original porqeu tocada está en true
-                this.$set(this.tableta[indice][index], 'color', 'darkMarron');
-                this.$set(this.tableta[indice][index], 'tocada', false);
-            }
-        },
-        // muestra mensaje al hacer click en una onza
-        onClick(indice, index){
-            // this.pulsada = !this.pulsada
-            if(this.pulsada === true && this.tableta[indice][index].anular === false){
-                this.$set(this.tableta[indice][index], 'secret', true);
-                this.$set(this.tableta[indice][index], 'color', 'yellow');
-                this.tableta[indice][index].anular = true;
-            }
-
-        },
-        comerFila(){
-            if(this.comer === true){
-                var numF = Math.floor((Math.random() * (7 - 0 + 1)) + 0)
-                for(let i=0; i<5; i++){                                    
-                    this.$set(this.tableta[numF][i], 'color', 'pink');
-                    this.$set(this.tableta[numF][i], 'anular', true);                                
-                } 
-            }else{
-                alert("No puedes comer más! Estas a tope!");
-            }                         
-
-        },
-        comerColumna(){
-            if(this.comer === true){
-            var numC = Math.floor((Math.random() * (5 - 0 + 1)) + 0)
-            for(let i=0; i<7; i++){                              
-                    this.$set(this.tableta[i][numC], 'color', 'pink');
-                    this.$set(this.tableta[i][numC], 'anular', true);                                
-            }
-            }else{
-                alert("No puedes comer más! Estas a tope!");
-            } 
-           
-        },
-        pararComer(){
-            this.comer = false;
+        this.resetTableta();
+      },
+      resetTableta() {
+        const auxArr = [];
+        for (let i = 0; i < 7; i++) {
+          auxArr.push([]);
+          for (let j = 0; j < 5; j++) {
+            auxArr[i].push({
+              iden: `${i}-${j}`,
+              color: "rgba(62, 15, 15, 0.8)",
+              secret: false,
+              anular: false,
+            });
+          }
         }
+        this.tableta = auxArr;
+      },
+      onClick(indice, index) {
+        const celda = this.tableta[indice][index];
+        if (!celda.anular) {
+          celda.secret = true;
+          celda.color = "rgba(201, 97, 97, 0.8)";
+          celda.anular = true;
+          this.checkIfFinished();
+        }
+      },
+      comerFila() {
+        const filasDisponibles = this.tableta
+          .map((fila, i) => (fila.every((celda) => celda.anular) ? null : i))
+          .filter((i) => i !== null);
+        if (filasDisponibles.length === 0) {
+          this.mostrarFin("¡Ya te has acabado la tableta!");
+          return;
+        }
+        const fila = filasDisponibles[Math.floor(Math.random() * filasDisponibles.length)];
+        this.tableta[fila].forEach((celda) => {
+          celda.secret = true;
+          celda.color = "rgba(201, 97, 97, 0.3)";
+          celda.anular = true;
+        });
+        this.checkIfFinished();
+      },
+      comerColumna() {
+        const columnasDisponibles = this.tableta[0]
+          .map((_, i) =>
+            this.tableta.every((fila) => fila[i].anular) ? null : i
+          )
+          .filter((i) => i !== null);
+        if (columnasDisponibles.length === 0) {
+          this.mostrarFin("¡Ya te has acabado la tableta!");
+          return;
+        }
+        const columna =
+          columnasDisponibles[
+            Math.floor(Math.random() * columnasDisponibles.length)
+          ];
+        this.tableta.forEach((fila) => {
+          fila[columna].secret = true;
+          fila[columna].color = "rgba(201, 97, 97, 0.3)";
+          fila[columna].anular = true;
+        });
+        this.checkIfFinished();
+      },
+      abrirGuardar() {
+        this.mostrarDialogo = true;
+        this.mostrarSoloOk = false;
+        this.mensajeDialogo = "¿Quieres guardar esta tableta para más tarde?";
+        this.callbackDialogo = this.guardarTableta;
+      },
+      guardarTableta(confirmado) {
+        if (confirmado) {
+          localStorage.setItem("tabletaGuardada", JSON.stringify(this.tableta));
+          this.tabletaGuardada = true;
+          this.mostrarFin("¡Partida guardada!");
+          this.resetTableta();
+        } else {
+          this.resetTableta();
+        }
+        this.mostrarDialogo = false;
+      },
+      recuperarTableta() {
+        this.tableta = JSON.parse(localStorage.getItem("tabletaGuardada"));
+        this.tabletaGuardada = false;
+        localStorage.removeItem("tabletaGuardada");
+      },
+      checkIfFinished() {
+        const terminado = this.tableta.every((fila) =>
+          fila.every((celda) => celda.anular)
+        );
+        if (terminado) {
+          this.mostrarFin("¡Ya te has acabado la tableta!");
+        }
+      },
+      confirmarDialogo(respuesta) {
+        if (this.callbackDialogo) this.callbackDialogo(respuesta);
+        this.mostrarDialogo = false;
+      },
+      mostrarFin(mensaje) {
+        this.mostrarDialogo = true;
+        this.mensajeDialogo = mensaje;
+        this.mostrarSoloOk = true;
+        this.callbackDialogo = () => {
+          this.resetTableta();
+        };
+      },
+    },
+  };
+  </script>  
+  
+  <style scoped>
+  /* Estilos de la tableta y los cuadros de diálogo */
 
-    }
-}
-</script>
-
-<style scoped>
-h1 {
-    text-align: center;
-}
-.contenedor-gde {
+  .contenedor-gde {
     background-color: rgb(234, 235, 222);
-    height: 80vh;
-}
-.tableta{
-    margin: 40px;
-}
-.fila {
-   
-    margin-top: 2px;
-    margin-bottom: 2px;
-    padding: 0px;
-    height: 80px;   
-}
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
 
-
-.celda {
-    display: inline-block;
-    width:80px;
-    height: 80px;
-    background-color: rgba(29, 6, 6, 0.536);
-    margin: 0px 1px;
-    padding: 0px;    
+  .imagen-chocolate {
+  margin-top: 10px; /* Espaciado entre la imagen y el mensaje */
+  margin-bottom: 0px;
+  max-width: 80%; /* Tamaño ajustado para que no ocupe toda la pantalla */
+  height: auto; /* Mantener la proporción de la imagen */
+  display: block; /* Centrar horizontalmente */
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 16px; /* Bordes redondeados para mejor estética */
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Sombra ligera */
 }
-.btn{
-    border-radius: 0.5;
-    background-color: rgb(181, 152, 59);
-    width: 20vw;
-    height: 5vh;
-    display: inline-block;
-    margin: 0px 20px;
-}
-.secret{
-    display:table-cell;
-    align-content: center;
+h1 {
+    margin-top: 10px;
     text-align: center;
-}
-#darkMarron{
-    background-color: rgba(62, 15, 15, 0.536);
-}
-#marron{
-    background-color:rgba(201, 97, 97, 0.543);
-}
-#yellow {
-    background-color: yellow;
-}
-#pink{
-    background-color: blueviolet;
-}
-
-
-</style>
+    color: #4a4a4a;
+  }
+  
+  .tableta {
+    margin: 40px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .fila {
+    display: flex;
+  }
+  
+  .celda {
+    width: 80px;
+    height: 80px;
+    margin: 2px;
+    position: relative;
+    cursor: pointer;
+    background-color: rgba(62, 15, 15, 0.8); /* Marrón oscuro */
+    transition: background-color 0.3s ease;
+    border-radius: 4px;
+  }
+  
+  .celda:hover {
+    background-color: rgba(201, 97, 97, 0.8); /* Marrón más claro */
+  }
+  
+  .emoji {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .btn {
+    border-radius: 5px;
+    background-color: rgb(181, 152, 59);
+    color: white;
+    width: 20vw;
+    height: 40px;
+    margin: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    border: none;
+  }
+  
+  .btn:hover {
+    background-color: rgb(150, 130, 50);
+  }
+  
+  .btn-guardada {
+    border-radius: 5px;
+    background-color: rgb(100, 200, 100);
+    color: white;
+    width: 200px;
+    height: 40px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    border: none;
+    transition: background-color 0.3s ease;
+  }
+  
+  .btn-guardada:hover {
+    background-color: rgb(80, 180, 80);
+  }
+  
+  .dialogo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .dialogo-contenido {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .dialogo-contenido p {
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    color: #4a4a4a;
+  }
+  
+  .dialogo-contenido button {
+    margin: 5px;
+    padding: 10px 20px;
+    background-color: rgb(181, 152, 59);
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .dialogo-contenido button:hover {
+    background-color: rgb(150, 130, 50);
+  }
+  </style>
+  
